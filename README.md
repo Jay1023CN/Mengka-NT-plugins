@@ -14,9 +14,9 @@ GitHub 打不开时，可直接使用下面的加速下载地址，无需更换�
 
 | 平台 | 备用线路一 | 备用线路二 |
 | --- | --- | --- |
-| windows-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.3/Catherina-Mengka-1.0.3-windows-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.3/Catherina-Mengka-1.0.3-windows-amd64.zip) |
-| linux-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.3/Catherina-Mengka-1.0.3-linux-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.3/Catherina-Mengka-1.0.3-linux-amd64.zip) |
-| linux-arm64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.3/Catherina-Mengka-1.0.3-linux-arm64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.3/Catherina-Mengka-1.0.3-linux-arm64.zip) |
+| windows-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.4/Catherina-Mengka-1.0.4-windows-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.4/Catherina-Mengka-1.0.4-windows-amd64.zip) |
+| linux-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.4/Catherina-Mengka-1.0.4-linux-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.4/Catherina-Mengka-1.0.4-linux-amd64.zip) |
+| linux-arm64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.4/Catherina-Mengka-1.0.4-linux-arm64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.4/Catherina-Mengka-1.0.4-linux-arm64.zip) |
 
 ## 可以做什么
 
@@ -83,7 +83,8 @@ chmod +x Catherina
 | 菜单内容 | 编辑菜单正文、前后缀、自定义菜单和各项功能的回复内容 |
 | 问答与白名单 | 添加问答，维护参与群发的群号 |
 | 自动任务 | 添加、编辑、暂停或删除循环群发、定时群发、定时说说 |
-| 账号设置 | 设置主人、回复文案、上线通知和其他账号选项 |
+| 全局设置 | 可选的额外主人、配置作用范围说明 |
+| 账号设置 | 回复文案、上线通知和按群单独开关 |
 | 连接与更新 | 管理萌卡连接，查看版本信息 |
 | 接口调试 | 发送 HTTP 请求并查看返回内容 |
 | 监控记录 | 查看当前账号命中的监控消息，可一键清空；记录保留 7 天 |
@@ -130,7 +131,7 @@ chmod +x Catherina
 
 以下是默认触发词，修改过触发词后请使用自己的设置。登录账号本人默认拥有指令权限；主人和触发名单用于额外授权其他 QQ。功能与指令开关仍按设置生效。
 
-管理页“菜单设置”中的主人 QQ 和总菜单属于全局配置，所有 QQ 共用；各登录账号本人始终拥有自己的指令权限，主人可以额外在任一账号上触发指令。各账号的 `菜单` 正文、前后缀和自定义菜单仍独立保存。首次可以在管理页初始化默认总菜单，或由登录账号本人发送 `初始化配置`；之后发送 `总菜单` 查看全局目录，发送 `菜单` 查看当前 QQ 菜单。`搜索命令 关键词` 可以查具体指令。
+管理页“全局设置”中的主人 QQ，以及“菜单设置”中的总菜单，均由所有 QQ 共用；各登录账号本人始终拥有自己的指令权限，主人可以额外在任一账号上触发指令。各账号的 `菜单` 正文、前后缀和自定义菜单仍独立保存。首次可以在管理页初始化默认总菜单，或由登录账号本人发送 `初始化配置`；之后发送 `总菜单` 查看全局目录，发送 `菜单` 查看当前 QQ 菜单。`搜索命令 关键词` 可以查具体指令。
 
 | 想做什么 | 发送内容 |
 | --- | --- |
@@ -212,4 +213,12 @@ ssh -L 18096:127.0.0.1:18096 user@host
 **遇到问题怎么反馈？**
 
 在 [Issues](https://github.com/Jay1023CN/Mengka-NT-plugins/issues) 写明插件版本、系统、出问题的操作和截图。请遮住截图中的管理密码与服务令牌。
+
+### 本人与其他人的指令权限
+
+登录 QQ 本人默认拥有指令权限。只给自己使用时，不需要配置主人或名单。
+
+“功能与指令”中可以按功能设置其他人可用的范围：不额外开放、允许所有人、只允许指定 QQ。主人仍可管理账号，功能与指令开关照常生效。“菜单”和“总菜单”保留为公共查询入口。
+
+“账号设置”中的群级开关可以逐项选择继承账号、单独开启或单独关闭，不需要填写 JSON。
 SDK 依据：https://github.com/Carlor-Official/Mengka-NT
