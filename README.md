@@ -2,7 +2,7 @@
 
 **适用于 Mengka NT 的 QQ 助手，全部功能免费。**
 
-把群管理、消息回复、菜单、群发和定时任务放在一个管理页面里。全局主人和总菜单由所有 QQ 共用，每个 QQ 的功能、普通菜单和任务单独保存。
+把群管理、消息回复、菜单、群发和定时任务放在一个管理页面里。菜单正文、自定义菜单、功能菜单与额外管理 QQ 由所有账号共用；自动功能、问答和任务按 QQ 保存。
 
 Catherina 与萌卡分别启动，通过 WebSocket 连接。支持 Windows x64、Linux x64 和 Linux ARM64。
 
@@ -14,9 +14,9 @@ GitHub 打不开时，可直接使用下面的加速下载地址，无需更换�
 
 | 平台 | 备用线路一 | 备用线路二 |
 | --- | --- | --- |
-| windows-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.4/Catherina-Mengka-1.0.4-windows-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.4/Catherina-Mengka-1.0.4-windows-amd64.zip) |
-| linux-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.4/Catherina-Mengka-1.0.4-linux-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.4/Catherina-Mengka-1.0.4-linux-amd64.zip) |
-| linux-arm64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.4/Catherina-Mengka-1.0.4-linux-arm64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.4/Catherina-Mengka-1.0.4-linux-arm64.zip) |
+| windows-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.5/Catherina-Mengka-1.0.5-windows-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.5/Catherina-Mengka-1.0.5-windows-amd64.zip) |
+| linux-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.5/Catherina-Mengka-1.0.5-linux-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.5/Catherina-Mengka-1.0.5-linux-amd64.zip) |
+| linux-arm64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.5/Catherina-Mengka-1.0.5-linux-arm64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.5/Catherina-Mengka-1.0.5-linux-arm64.zip) |
 
 ## 可以做什么
 
@@ -123,15 +123,15 @@ chmod +x Catherina
 
 从 **1.0.0** 开始使用主版本.次版本.修订号，每次正式发布递增版本。日期版用户首次切换到 1.0.x 需要重新导入安装包，账号数据保留。旧日期版界面可能把 2026 开头的版本号误判为比 1.0.x 更新；请以新版安装包版本为准。
 
-独立运行默认在后台自动下载安装新版，启动后检查一次，此后每小时检查。萌卡托管模式按框架要求导入新版安装包，管理页会自动检查并提供下载入口。
+独立运行默认在后台自动下载安装新版，启动后检查一次，此后每小时检查。萌卡托管模式可在管理页登录当前框架后在线更新，由插件下载并校验安装包，再交给框架安装。
 
 接口调试支持当前 QQ 的萌卡接口名称和 JSON 参数，也支持带自定义请求头的 HTTP 请求，可查看耗时、响应头及格式化结果。调试修改类接口会实际执行对应操作。
 
 ## 常用聊天指令
 
-以下是默认触发词，修改过触发词后请使用自己的设置。登录账号本人默认拥有指令权限；主人和触发名单用于额外授权其他 QQ。功能与指令开关仍按设置生效。
+以下是默认触发词，修改过触发词后请使用自己的设置。登录账号本人默认拥有指令权限；主人和触发名单用于额外授权其他 QQ。本人手动指令不受自动功能开关阻挡；明确停用的指令仍不响应。
 
-管理页“全局设置”中的主人 QQ，以及“菜单设置”中的总菜单，均由所有 QQ 共用；各登录账号本人始终拥有自己的指令权限，主人可以额外在任一账号上触发指令。各账号的 `菜单` 正文、前后缀和自定义菜单仍独立保存。首次可以在管理页初始化默认总菜单，或由登录账号本人发送 `初始化配置`；之后发送 `总菜单` 查看全局目录，发送 `菜单` 查看当前 QQ 菜单。`搜索命令 关键词` 可以查具体指令。
+“共用菜单”中直接展示实际正文。“菜单”和“总菜单”回复同一份共用内容，自定义菜单、功能菜单回复和前后缀也由所有 QQ 共用。默认菜单会自动生成，不需要先猜触发词或填写模板。“搜索命令 关键词”可以查询具体用法。
 
 | 想做什么 | 发送内容 |
 | --- | --- |
@@ -159,11 +159,11 @@ chmod +x Catherina
 
 ## 更新源与离线环境
 
-程序每小时读取一次更新清单 `release.dat` 和版本策略 `state.dat`，两个文件都在公开仓库里，只有几百字节。托管在萌卡里运行时不会自动下载安装包，读取它们只用于确认版本和展示公告。
+程序每小时读取一次更新清单 `release.dat` 和版本策略 `state.dat`，两个文件都在公开仓库里，只有几百字节。托管运行时，在当前萌卡管理员会话有效的情况下，可自动下载并提交新版升级。
 
 检查版本信息时，GitHub 直连失败会自动切换备用源：程序会自动改用公共 CDN 镜像（jsDelivr 的 `cdn`、`fastly`、`gcore` 三个节点），它们回源同一个公开仓库，作者发布时不需要额外同步。哪个源能用完全由程序判断，切换到镜像时日志会出现一行“GitHub 直连不可用，更新源已切换到 …”。
 
-版本信息通过 CDN 备用源获取；安装包优先从 GitHub 下载，连接失败、超时、包不完整时自动依次切换到备用加速线路。独立运行会继续完成自动更新，无需更换设备或手动选择下载地址。萌卡托管模式的“下载新版安装包”也使用同样的自动换源流程，下载完成后在框架中导入。
+版本信息通过 CDN 备用源获取；安装包优先从 GitHub 下载，连接失败、超时、包不完整时自动依次切换到备用加速线路。独立运行会继续完成自动更新，无需更换设备或手动选择下载地址。萌卡托管模式的在线更新也复用自动换源流程，下载后直接提交给框架安装。
 
 只有当你想强制走自建源或内网静态目录时，才需要设置环境变量。设置后程序只认这一个地址，不再自动兜底：
 
@@ -221,4 +221,14 @@ ssh -L 18096:127.0.0.1:18096 user@host
 “功能与指令”中可以按功能设置其他人可用的范围：不额外开放、允许所有人、只允许指定 QQ。主人仍可管理账号，功能与指令开关照常生效。“菜单”和“总菜单”保留为公共查询入口。
 
 “账号设置”中的群级开关可以逐项选择继承账号、单独开启或单独关闭，不需要填写 JSON。
+
+## 在线更新与共用菜单
+
+“连接与更新”中点击“立即在线更新”。独立运行会自动安装并重启；萌卡托管运行会让你登录当前萌卡的管理员账号，然后自动下载、校验并提交给框架升级，不需要保存 ZIP 后再上传。图形验证码由当前萌卡提供；密码不保存，登录会话只保留在当前插件进程内。新版有权限变更时，页面会列出变更并等待确认。后台每小时检查一次，有效管理员会话下可自动提交新版；重启或会话到期后需要重新登录。
+
+菜单页直接显示实际正文，“菜单”和“总菜单”共用同一份内容。自定义菜单、功能菜单回复和前后缀也由所有登录 QQ 共用。本人手动指令不依赖自动功能开关，明确停用的指令除外；自动功能支持批量开启或关闭。
+
+“给别人安装”提供公开发布页和备用下载地址，对方不需要访问你的管理域名，也不需要 GitHub 账号。对方将插件安装在自己的萌卡或机器上，使用自己的入口和登录会话。
+
+1.0.2 等旧版未包含托管在线更新入口，需要先导入支持在线更新的版本一次。
 SDK 依据：https://github.com/Carlor-Official/Mengka-NT
