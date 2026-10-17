@@ -14,9 +14,9 @@ GitHub 打不开时，可直接使用下面的加速下载地址，无需更换�
 
 | 平台 | 备用线路一 | 备用线路二 |
 | --- | --- | --- |
-| windows-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.2/Catherina-Mengka-1.0.2-windows-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.2/Catherina-Mengka-1.0.2-windows-amd64.zip) |
-| linux-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.2/Catherina-Mengka-1.0.2-linux-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.2/Catherina-Mengka-1.0.2-linux-amd64.zip) |
-| linux-arm64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.2/Catherina-Mengka-1.0.2-linux-arm64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.2/Catherina-Mengka-1.0.2-linux-arm64.zip) |
+| windows-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.3/Catherina-Mengka-1.0.3-windows-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.3/Catherina-Mengka-1.0.3-windows-amd64.zip) |
+| linux-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.3/Catherina-Mengka-1.0.3-linux-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.3/Catherina-Mengka-1.0.3-linux-amd64.zip) |
+| linux-arm64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.3/Catherina-Mengka-1.0.3-linux-arm64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.3/Catherina-Mengka-1.0.3-linux-arm64.zip) |
 
 ## 可以做什么
 
@@ -69,7 +69,7 @@ chmod +x Catherina
 1. 打开管理页面，设置一个至少 8 位的管理密码。
 2. 在萌卡的“插件对接”中启用正向 WebSocket，创建服务令牌，并允许所需消息和事件。
 3. 进入 Catherina 的“连接与更新”，填写 WebSocket 地址及服务令牌，点击“保存并连接”。
-4. 从左侧选择要管理的 QQ，在“账号设置”中填写主人 QQ。
+4. 从左侧选择要管理的 QQ，本人直接给自己发送指令即可使用，无需填写主人 QQ。
 5. 到“功能与指令”开启需要的功能，再配置菜单、白名单和自动任务。
 
 连接后可以刷新 QQ 列表。切换 QQ 后，页面显示的是该账号自己的配置；同一 QQ 使用不同协议时也分别保存。
@@ -128,9 +128,9 @@ chmod +x Catherina
 
 ## 常用聊天指令
 
-以下是默认触发词，修改过触发词后请使用自己的设置。部分操作仅主人或已授权人员可用。
+以下是默认触发词，修改过触发词后请使用自己的设置。登录账号本人默认拥有指令权限；主人和触发名单用于额外授权其他 QQ。功能与指令开关仍按设置生效。
 
-管理页“菜单设置”中的主人 QQ 和总菜单属于全局配置，所有 QQ 共用；主人可以在任一账号上触发全部指令。各账号的 `菜单` 正文、前后缀和自定义菜单仍独立保存。首次可以在管理页初始化默认总菜单，或由已设置的主人发送 `初始化配置`；之后发送 `总菜单` 查看全局目录，发送 `菜单` 查看当前 QQ 菜单。`搜索命令 关键词` 可以查具体指令。
+管理页“菜单设置”中的主人 QQ 和总菜单属于全局配置，所有 QQ 共用；各登录账号本人始终拥有自己的指令权限，主人可以额外在任一账号上触发指令。各账号的 `菜单` 正文、前后缀和自定义菜单仍独立保存。首次可以在管理页初始化默认总菜单，或由登录账号本人发送 `初始化配置`；之后发送 `总菜单` 查看全局目录，发送 `菜单` 查看当前 QQ 菜单。`搜索命令 关键词` 可以查具体指令。
 
 | 想做什么 | 发送内容 |
 | --- | --- |
