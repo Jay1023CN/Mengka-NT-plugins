@@ -8,6 +8,16 @@ Catherina 与萌卡分别启动，通过 WebSocket 连接。支持 Windows x64�
 
 [下载安装包](https://github.com/Jay1023CN/Mengka-NT-plugins/releases) · [反馈问题](https://github.com/Jay1023CN/Mengka-NT-plugins/issues)
 
+## 备用下载
+
+GitHub 打不开时，可直接使用下面的加速下载地址，无需更换设备。
+
+| 平台 | 备用线路一 | 备用线路二 |
+| --- | --- | --- |
+| windows-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.2/Catherina-Mengka-1.0.2-windows-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.2/Catherina-Mengka-1.0.2-windows-amd64.zip) |
+| linux-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.2/Catherina-Mengka-1.0.2-linux-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.2/Catherina-Mengka-1.0.2-linux-amd64.zip) |
+| linux-arm64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.2/Catherina-Mengka-1.0.2-linux-arm64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.2/Catherina-Mengka-1.0.2-linux-arm64.zip) |
+
 ## 可以做什么
 
 | 分类 | 功能 |
@@ -110,7 +120,7 @@ chmod +x Catherina
 
 ## 版本与自动更新
 
-从 **1.0.0** 开始使用主版本.次版本.修订号，每次正式发布递增版本。日期版用户首次切换到 1.0.0 需要重新导入安装包，账号数据保留。
+从 **1.0.0** 开始使用主版本.次版本.修订号，每次正式发布递增版本。日期版用户首次切换到 1.0.x 需要重新导入安装包，账号数据保留。旧日期版界面可能把 2026 开头的版本号误判为比 1.0.x 更新；请以新版安装包版本为准。
 
 独立运行默认在后台自动下载安装新版，启动后检查一次，此后每小时检查。萌卡托管模式按框架要求导入新版安装包，管理页会自动检查并提供下载入口。
 
@@ -152,7 +162,7 @@ chmod +x Catherina
 
 检查版本信息时，GitHub 直连失败会自动切换备用源：程序会自动改用公共 CDN 镜像（jsDelivr 的 `cdn`、`fastly`、`gcore` 三个节点），它们回源同一个公开仓库，作者发布时不需要额外同步。哪个源能用完全由程序判断，切换到镜像时日志会出现一行“GitHub 直连不可用，更新源已切换到 …”。
 
-备用 CDN 用于获取版本信息。安装包下载失败时会保留当前版本，独立运行模式在下一小时重新尝试。下载站不可达的用户，可以在其他设备下载三个平台中对应的安装包，再传到本机更新；萌卡托管模式在“插件导入”中上传即可。
+版本信息通过 CDN 备用源获取；安装包优先从 GitHub 下载，连接失败、超时、包不完整时自动依次切换到备用加速线路。独立运行会继续完成自动更新，无需更换设备或手动选择下载地址。萌卡托管模式的“下载新版安装包”也使用同样的自动换源流程，下载完成后在框架中导入。
 
 只有当你想强制走自建源或内网静态目录时，才需要设置环境变量。设置后程序只认这一个地址，不再自动兜底：
 
@@ -177,7 +187,7 @@ Environment="CATHERINA_FEED_BASE=https://mirror.example.com/mengka/"
 
 完全离线的机器可以手工投喂策略：在有网机器下载 `state.dat`，重命名为 `state-cache.dat`，以 600 权限放进数据目录，然后启动程序读取。策略本身最长 30 天有效，到期需要重新投喂，否则机器人功能会暂停。
 
-安装包下载地址固定指向 GitHub Releases（清单里的地址会逐一校验），因此手动模式的自动升级仍需能访问 Releases；萌卡托管下由框架重新导入安装包，不受影响。
+备用下载线路回源同一份 GitHub Releases 安装包，无需用户配置。所有线路都不可达时保留当前版本，下一小时重新检查。
 
 ## 常见问题
 
