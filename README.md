@@ -14,15 +14,15 @@ GitHub 打不开时，可直接使用下面的加速下载地址，无需更换�
 
 | 平台 | 备用线路一 | 备用线路二 |
 | --- | --- | --- |
-| windows-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.5/Catherina-Mengka-1.0.5-windows-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.5/Catherina-Mengka-1.0.5-windows-amd64.zip) |
-| linux-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.5/Catherina-Mengka-1.0.5-linux-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.5/Catherina-Mengka-1.0.5-linux-amd64.zip) |
-| linux-arm64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.5/Catherina-Mengka-1.0.5-linux-arm64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.5/Catherina-Mengka-1.0.5-linux-arm64.zip) |
+| windows-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.6/Catherina-Mengka-1.0.6-windows-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.6/Catherina-Mengka-1.0.6-windows-amd64.zip) |
+| linux-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.6/Catherina-Mengka-1.0.6-linux-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.6/Catherina-Mengka-1.0.6-linux-amd64.zip) |
+| linux-arm64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.6/Catherina-Mengka-1.0.6-linux-arm64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.6/Catherina-Mengka-1.0.6-linux-arm64.zip) |
 
 ## 可以做什么
 
 | 分类 | 功能 |
 | --- | --- |
-| 消息与群发 | 向白名单群发送消息，设置循环群发、每天定时群发，代发好友或群消息 |
+| 消息与群发 | 分别向指定群或好友发送消息；可预览收件对象、确认后发送，并设置循环或每天定时发送 |
 | 菜单与回复 | 自定义菜单正文、触发词和回复内容，多行前后缀，问答库，触发人员名单 |
 | 群聊管理 | 成员禁言、全体禁言、踢人、群公告、成员查询、专属头衔、群打卡 |
 | 聊天互动 | 艾特回复、戳一戳回复、消息表情回应、名片点赞、随机回话、私聊互动天数与续火提醒 |
@@ -81,7 +81,7 @@ chmod +x Catherina
 | 总览 | 查看当前账号、功能状态和插件公告 |
 | 功能与指令 | 开关功能，搜索功能，修改指令触发词，设置触发人员 |
 | 菜单内容 | 编辑菜单正文、前后缀、自定义菜单和各项功能的回复内容 |
-| 问答与白名单 | 添加问答，维护参与群发的群号 |
+| 问答与白名单 | 添加问答；从当前 QQ 的群和好友列表里选择群发对象，也可手动输入号码 |
 | 自动任务 | 添加、编辑、暂停或删除循环群发、定时群发、定时说说 |
 | 全局设置 | 可选的额外主人、配置作用范围说明 |
 | 账号设置 | 回复文案、上线通知和按群单独开关 |
@@ -115,9 +115,9 @@ chmod +x Catherina
 
 ### 配置群发和定时任务
 
-先在“问答与白名单”添加群号，并开启对应群的群发开关。然后到“自动任务”选择任务类型、填写内容及时间，保存并启用。
+先在“问答与白名单”分别选择接收群消息的群、接收私聊消息的好友。点“从当前 QQ 选择”可按名称搜索萌卡返回的联系人，不需要记号码；旧版群发名单会继续作为群聊收件对象保留。然后到“自动任务”选择群、好友或两者，填写内容及时间，保存并启用。
 
-群发仅面向当前账号已启用的白名单群。每天定时任务使用程序所在电脑的本地时间；任务可以单独暂停，保存后重启仍在。
+聊天指令分为“群发群”和“群发好友”。先发出预览，确认对象、数量和内容后再回复“确认发送”，两分钟内有效。循环和定时任务按所选对象发送；每天定时任务使用程序所在电脑的本地时间，任务可以单独暂停，保存后重启仍在。
 
 ## 版本与自动更新
 
@@ -140,8 +140,12 @@ chmod +x Catherina
 | 查看当前 QQ 菜单 | `菜单` |
 | 查找相关命令 | `搜索命令 群发` |
 | 查看账号状态 | `账号状态` |
-| 添加群发目标 | `群发 添加 群号` |
-| 向白名单群发消息 | `群发 今天的通知内容` |
+| 向已选群聊发送 | `群发群 今晚8点集合`，确认预览后回复 `确认发送` |
+| 向已选好友私聊 | `群发好友 晚安`，确认预览后回复 `确认发送` |
+| 查看群收件对象 | `群发群 列表` |
+| 查看好友收件对象 | `群发好友 列表` |
+| 每天晚上8点发到群 | `定时群发群 每天晚上8点发 晚安` |
+| 每天晚上8点私聊好友 | `定时群发好友 每天晚上8点发 晚安` |
 | 添加一条问答 | `问答 添加 你好\|你好，有什么可以帮你？` |
 | 点歌 | `点歌 歌名` |
 | 在当前群打卡 | `打卡` |
@@ -198,7 +202,7 @@ Environment="CATHERINA_FEED_BASE=https://mirror.example.com/mengka/"
 
 **指令没有回复？**
 
-先确认左侧选中了正确的 QQ，再检查功能开关、触发词和触发人员权限。群发还需要配置白名单；群管理需要当前 QQ 具备相应权限。
+先确认左侧选中了正确的 QQ，再检查功能开关和触发词。群发需要分别选择接收群或好友；好友消息只会发送给当前 QQ 的好友，群消息只会发送到当前 QQ 所在的群。群管理需要当前 QQ 具备相应权限。
 
 **Linux 程序运行在远程电脑上，怎么打开管理页面？**
 
