@@ -148,7 +148,8 @@ func (e *Engine) pollFeeds(a Account, c Config) {
 		if !e.allowed() {
 			return
 		}
-		err = e.Client.Notify("like_qzone_feed", M{"self_id": a.SelfID, "client_type": a.ClientType, "feed": feed})
+		// Codex 修改：空间点赞使用账号适配层，为 3.0 补齐 protocol_id。
+		_, err = e.call(a, "like_qzone_feed", M{"feed": feed})
 		if err != nil {
 			log.Printf("空间点赞提交失败：%v", err)
 			continue
@@ -176,23 +177,34 @@ func (e *Engine) level(a Account, execute bool) (string, error) {
 		return "", errors.New("等级任务面板回包格式不正确")
 	}
 	tasks := map[string]bool{}
-	var visit func(any)
-	visit = func(v any) {
-		switch x := v.(type) {
-		case map[string]any:
-			if x["can_execute"] == true && x["is_paid_task"] != true && text(x["title"]) != "" {
-				tasks[text(x["title"])] = true
+	if e.protocolV3.Load() {
+		if response, ok := data.(map[string]any); ok && response["skipped"] == true {
+			reason := text(response["reason"])
+			if reason == "" {
+				reason = "当前账号协议不支持等级加速"
 			}
-			for _, v := range x {
-				visit(v)
-			}
-		case []any:
-			for _, v := range x {
-				visit(v)
+			return reason, nil
+		}
+		collectV3LevelTasks(data, tasks)
+	} else {
+		var visit func(any)
+		visit = func(v any) {
+			switch x := v.(type) {
+			case map[string]any:
+				if x["can_execute"] == true && x["is_paid_task"] != true && text(x["title"]) != "" {
+					tasks[text(x["title"])] = true
+				}
+				for _, v := range x {
+					visit(v)
+				}
+			case []any:
+				for _, v := range x {
+					visit(v)
+				}
 			}
 		}
+		visit(data)
 	}
-	visit(data)
 	names := make([]string, 0, len(tasks))
 	for title := range tasks {
 		names = append(names, title)
@@ -209,6 +221,44 @@ func (e *Engine) level(a Account, execute bool) (string, error) {
 		return "", err
 	}
 	return "等级任务接口已确认完成；加速天数以 QQ 等级面板为准", nil
+}
+
+// Codex 修改：按 3.0 任务清单读取未完成基础任务；额外任务需明确标为免费才执行。
+func collectV3LevelTasks(data any, tasks map[string]bool) {
+	root, ok := data.(map[string]any)
+	if !ok {
+		return
+	}
+	for _, sectionName := range []string{"base_info", "extra_info"} {
+		section, ok := root[sectionName].(map[string]any)
+		if !ok {
+			continue
+		}
+		listName := "base_task_list"
+		if sectionName == "extra_info" {
+			listName = "extra_task_list"
+		}
+		list, _ := section[listName].([]any)
+		for _, entry := range list {
+			task, ok := entry.(map[string]any)
+			if !ok || task["is_done"] == true || task["is_paid_task"] == true || task["is_free"] == false || task["can_execute"] == false {
+				continue
+			}
+			if sectionName == "extra_info" && task["is_free"] != true && task["is_paid_task"] != false {
+				continue
+			}
+			name := text(task["title"])
+			if name == "" {
+				name = text(task["task_name"])
+			}
+			if name == "" {
+				name = text(task["name"])
+			}
+			if name != "" {
+				tasks[name] = true
+			}
+		}
+	}
 }
 func (e *Engine) music(m Event, keyword string) error {
 	data, err := fetch(e.ctx, "https://music.163.com/api/search/get/web?s="+url.QueryEscape(keyword)+"&type=1&limit=1", 2*1024*1024)

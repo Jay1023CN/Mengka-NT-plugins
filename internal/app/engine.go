@@ -19,8 +19,10 @@ import (
 	"time"
 )
 
-var Actions = []string{"get_plugin_context", "get_bot_list", "get_bot_info", "send_group_msg", "send_private_msg", "send_group_temp_msg", "get_group_list", "get_friend_list", "get_group_member_list", "get_summary_card", "like_summary_card", "group_sign", "set_friend_remark", "set_group_special_title", "set_group_mute_all", "set_group_mute", "kick_group_member", "send_group_notice", "set_qq_profile", "get_level_task_panel", "execute_level_tasks", "publish_qzone_feed", "get_qzone_friend_feeds", "like_qzone_feed", "comment_qzone_feed", "get_music_ark", "get_red_packet_info", "grab_red_packet", "get_flash_image", "set_msg_emoji_like", "set_friend_add_request", "approve_group_apply", "approve_group_invite"}
+// Codex 修改：安装权限同时包含 2.5.4 与 3.0 的 API 名称；WebSocket 认证仍使用旧权限集。
+var Actions = []string{"get_plugin_context", "get_bot_list", "get_bot_info", "send_group_msg", "send_private_msg", "send_friend_msg", "send_group_temp_msg", "get_group_list", "get_friend_list", "get_group_member_list", "get_summary_card", "get_user_profile", "like_summary_card", "like_user_profile", "group_sign", "sign_group", "set_friend_remark", "set_group_special_title", "set_group_mute_all", "set_group_mute", "kick_group_member", "send_group_notice", "set_qq_profile", "profile_operation", "get_level_task_panel", "get_level_tasks", "execute_level_tasks", "publish_qzone_feed", "get_qzone_friend_feeds", "like_qzone_feed", "comment_qzone_feed", "get_music_ark", "get_red_packet_info", "grab_red_packet", "get_flash_image", "set_msg_emoji_like", "set_friend_add_request", "get_friend_requests", "set_friend_request", "approve_group_apply", "approve_group_invite"}
 var EventPermissions = []string{"group_message", "friend_message", "request", "group_event", "friend_event", "system_event", "bot_offline"}
+var NativeEventPermissions = []string{"group_message", "friend_message", "request", "group_event", "friend_event", "system_event", "bot_offline", "bot_online"}
 
 type Engine struct {
 	Policy      *PolicyManager
@@ -33,6 +35,8 @@ type Engine struct {
 	lanes       []chan Event
 	work        chan func()
 	started     atomic.Bool
+	protocolV3  atomic.Bool
+	protocolSet atomic.Bool
 	accountsMu  sync.RWMutex
 	accounts    map[string]Account
 	mu          sync.Mutex
@@ -160,7 +164,30 @@ func (e *Engine) Submit(raw json.RawMessage) {
 		log.Printf("事件格式无效：%v", err)
 		return
 	}
+	normalizeEvent(&event)
+	if event.SelfID > 0 {
+		matched := false
+		e.accountsMu.RLock()
+		for _, account := range e.accounts {
+			if account.SelfID == event.SelfID && account.ProtocolID == event.ProtocolID && (event.ClientType == "" || account.ClientType == normalizeClientType(event.ClientType)) {
+				event.ClientType = account.ClientType
+				event.AccountKey = account.Key()
+				matched = true
+				break
+			}
+		}
+		e.accountsMu.RUnlock()
+		if e.protocolV3.Load() && !matched {
+			if e.started.Load() {
+				e.background("refresh", e.refresh)
+			}
+			return
+		}
+	}
 	if event.SelfID <= 0 || (event.ClientType != "android" && event.ClientType != "linuxqq") {
+		if e.started.Load() {
+			e.background("refresh", e.refresh)
+		}
 		return
 	}
 	if !e.started.Load() {
@@ -174,6 +201,71 @@ func (e *Engine) Submit(raw json.RawMessage) {
 	default:
 		e.Dropped.Add(1)
 		log.Printf("账号 %s 的消息队列已满，本次事件未处理", event.Account().Key())
+	}
+}
+
+// Codex 修改：把 3.0 post_type/sub_type 事件归一到现有业务事件，并读出 msg 序列号。
+func normalizeEvent(event *Event) {
+	if event.Body == nil {
+		event.Body = M{}
+	}
+	if event.PostType == "" || event.EventType != "" {
+		return
+	}
+	if event.Msg != nil {
+		if event.MessageSeq == 0 {
+			event.MessageSeq = number(event.Msg["seq"])
+		}
+		if event.MsgSeq == 0 {
+			event.MsgSeq = number(event.Msg["seq"])
+		}
+	}
+	switch event.PostType {
+	case "group_message":
+		event.EventType = "group_message_received"
+	case "friend_message", "group_temp_message":
+		event.EventType = "private_message_received"
+		if event.PostType == "group_temp_message" {
+			event.GroupID = 0
+		}
+	case "bot_online":
+		event.EventType = "account_online"
+	case "bot_offline":
+		event.EventType = "account_offline"
+	case "friend_notice":
+		switch event.SubType {
+		case "recall":
+			event.EventType = "friend_message_recalled"
+		case "apply":
+			event.EventType = "friend_request_received"
+		}
+	case "group_notice":
+		switch event.SubType {
+		case "recall":
+			event.EventType = "group_message_recalled"
+		case "apply":
+			event.EventType = "group_request_received"
+		case "poke":
+			event.EventType = "user_poked"
+		}
+	}
+	if event.EventType == "group_message_recalled" || event.EventType == "friend_message_recalled" {
+		if event.MsgSeq == 0 {
+			event.MsgSeq = number(event.Body["msg_seq"])
+		}
+		if event.MessageSeq == 0 {
+			event.MessageSeq = number(event.Body["message_seq"])
+		}
+	}
+	if event.EventType == "group_request_received" {
+		if number(event.Body["msg_seq"]) <= 0 && number(event.Msg["seq"]) > 0 {
+			event.Body["msg_seq"] = event.Msg["seq"]
+		}
+		if _, ok := event.Body["msg_seq"]; !ok {
+			if seq := number(event.Body["msgseq"]); seq > 0 {
+				event.Body["msg_seq"] = seq
+			}
+		}
 	}
 }
 func (e *Engine) Accounts() []Account {
@@ -208,9 +300,32 @@ func (e *Engine) Known(key string) bool {
 	_, ok := e.accounts[key]
 	return ok
 }
+
+// Codex 修改：管理接口按稳定账号键读取完整路由信息，支持同 QQ 多协议实例。
+func (e *Engine) Account(key string) (Account, bool) {
+	e.accountsMu.RLock()
+	defer e.accountsMu.RUnlock()
+	a, ok := e.accounts[key]
+	return a, ok
+}
 func (e *Engine) refresh() {
 	ctx, cancel := context.WithTimeout(e.ctx, 20*time.Second)
 	defer cancel()
+	// Codex 修改：通过 IPC ready 类型或上下文账号选择器识别 3.0，旧版继续使用 client_type。
+	if e.Client.ModernIPC() {
+		e.protocolV3.Store(true)
+		e.protocolSet.Store(true)
+	} else if !e.protocolSet.Load() {
+		if rawContext, contextErr := e.Client.Call(ctx, "get_plugin_context", M{}); contextErr == nil {
+			var framework struct {
+				AccountSelector string `json:"account_selector"`
+			}
+			if json.Unmarshal(rawContext, &framework) == nil {
+				e.protocolV3.Store(framework.AccountSelector == "self_id+protocol_id")
+				e.protocolSet.Store(true)
+			}
+		}
+	}
 	raw, err := e.Client.Call(ctx, "get_bot_list", M{})
 	if err != nil {
 		log.Printf("读取账号列表失败：%v", err)
@@ -221,11 +336,17 @@ func (e *Engine) refresh() {
 		log.Printf("账号列表不符合 SDK 数组契约：%v", err)
 		return
 	}
-	out := map[string]Account{}
-	for _, a := range bots {
-		if a.SelfID > 0 && (a.ClientType == "android" || a.ClientType == "linuxqq") {
-			out[a.Key()] = a
-		}
+	assigned, err := e.Store.AssignAccountKeys(bots)
+	if err != nil {
+		log.Printf("分配协议账号键失败：%v", err)
+		return
+	}
+	if len(assigned) != len(bots) {
+		log.Printf("账号列表中有 %d 个协议实例无法唯一识别，已跳过", len(bots)-len(assigned))
+	}
+	out := make(map[string]Account, len(assigned))
+	for _, a := range assigned {
+		out[a.Key()] = a
 	}
 	e.accountsMu.Lock()
 	previous := e.accounts
@@ -235,7 +356,7 @@ func (e *Engine) refresh() {
 		if a.Status == 1 && previous[key].Status != 1 {
 			state, err := e.Store.Get(key)
 			if err == nil && state.Config.Notify && state.Config.On("online_notify", 0) {
-				e.notifyOnline(Event{SelfID: a.SelfID, ClientType: a.ClientType}, state.Config)
+				e.notifyOnline(Event{SelfID: a.SelfID, ClientType: a.ClientType, ProtocolID: a.ProtocolID, AccountKey: a.Key()}, state.Config)
 			}
 		}
 	}
@@ -252,13 +373,42 @@ func (e *Engine) call(a Account, action string, p M) (json.RawMessage, error) {
 	}
 	if p == nil {
 		p = M{}
+	} else {
+		// Codex 修改：复制请求参数，避免版本适配改写命令层用于显示的原始参数。
+		params := make(M, len(p)+2)
+		for key, value := range p {
+			params[key] = value
+		}
+		p = params
 	}
-	p["self_id"] = a.SelfID
-	p["client_type"] = a.ClientType
+	// Codex 修改：框架上下文和账号目录是全局接口，不附加账号路由字段。
+	globalAction := action == "get_plugin_context" || action == "get_bot_list" || action == "get_protocol_list"
+	if globalAction {
+		delete(p, "self_id")
+		delete(p, "client_type")
+		delete(p, "protocol_id")
+	} else {
+		p["self_id"] = a.SelfID
+	}
+	if e.protocolV3.Load() && !globalAction {
+		e.accountsMu.RLock()
+		if current, ok := e.accounts[a.Key()]; ok && current.SelfID == a.SelfID {
+			a.ProtocolID = current.ProtocolID
+		}
+		e.accountsMu.RUnlock()
+		p["protocol_id"] = a.ProtocolID
+		delete(p, "client_type")
+	} else if !globalAction {
+		p["client_type"] = a.ClientType
+	}
+	requestedAction := action
+	if e.protocolV3.Load() {
+		action, p = adaptV3Action(action, p)
+	}
 	ctx, cancel := context.WithTimeout(e.ctx, actionTimeout(action))
 	defer cancel()
 	raw, err := e.Client.Call(ctx, action, p)
-	if err == nil && (action == "send_private_msg" || action == "send_group_msg" || action == "send_group_temp_msg") {
+	if err == nil && (requestedAction == "send_private_msg" || requestedAction == "send_group_msg" || requestedAction == "send_group_temp_msg") {
 		var result struct {
 			MessageID int64 `json:"message_id"`
 		}
@@ -267,6 +417,41 @@ func (e *Engine) call(a Account, action string, p M) (json.RawMessage, error) {
 		}
 	}
 	return raw, err
+}
+
+// Codex 修改：把旧版业务动作和参数映射到 3.0 API，同时保持旧框架调用名不变。
+func adaptV3Action(action string, params M) (string, M) {
+	move := func(from, to string) {
+		if value, ok := params[from]; ok {
+			params[to] = value
+			delete(params, from)
+		}
+	}
+	switch action {
+	case "send_private_msg":
+		action = "send_friend_msg"
+	case "get_summary_card":
+		action = "get_user_profile"
+		move("target_uin", "user_id")
+	case "like_summary_card":
+		action = "like_user_profile"
+		move("target_uin", "user_id")
+	case "group_sign":
+		action = "sign_group"
+	case "get_level_task_panel":
+		action = "get_level_tasks"
+		delete(params, "refresh")
+	case "set_qq_profile":
+		action = "profile_operation"
+		params["operation"] = "signature.set"
+		params["request"] = M{"long_nick": params["personal_note"]}
+		delete(params, "nickname")
+		delete(params, "personal_note")
+	case "approve_group_invite":
+		move("msgseq", "msg_seq")
+		delete(params, "flag")
+	}
+	return action, params
 }
 func (e *Engine) send(a Account, group, user int64, segments []Segment) error {
 	if len(segments) == 0 {
@@ -354,6 +539,10 @@ func (e *Engine) handle(m Event) {
 		a := e.accounts[key]
 		a.SelfID = m.SelfID
 		a.ClientType = m.ClientType
+		a.ProtocolID = m.ProtocolID
+		if m.AccountKey != "" {
+			a.AccountKey = m.AccountKey
+		}
 		if m.EventType == "account_online" {
 			a.Status = 1
 		} else {
@@ -468,8 +657,12 @@ func (e *Engine) handle(m Event) {
 			_ = e.reply(m, c.PokeText)
 		}
 	case "friend_request_received":
-		if c.On("auto", 0) && m.Flag != "" {
-			_, err = e.call(m.Account(), "set_friend_add_request", M{"flag": m.Flag, "approve": true})
+		if c.On("auto", 0) && (m.Flag != "" || e.protocolV3.Load()) {
+			if e.protocolV3.Load() {
+				err = e.approveFriendRequest(m)
+			} else {
+				_, err = e.call(m.Account(), "set_friend_add_request", M{"flag": m.Flag, "approve": true})
+			}
 			if err != nil {
 				log.Printf("好友申请处理失败：%v", err)
 			}
@@ -478,15 +671,95 @@ func (e *Engine) handle(m Event) {
 		if !c.On("auto", m.GroupID) {
 			return
 		}
-		if m.RequestID > 0 && m.RequestType > 0 {
-			_, err = e.call(m.Account(), "approve_group_apply", M{"group_id": m.GroupID, "request_id": m.RequestID, "request_type": m.RequestType, "request_extra": m.RequestExtra})
-		} else if number(m.Body["msgseq"]) > 0 {
-			_, err = e.call(m.Account(), "approve_group_invite", M{"group_id": m.GroupID, "msgseq": m.Body["msgseq"], "flag": m.Flag})
+		if eventAllows(m, "approve_group_invite") || (number(m.Body["msg_seq"]) > 0 && (m.RequestID <= 0 || m.RequestType <= 0)) {
+			var result json.RawMessage
+			result, err = e.call(m.Account(), "approve_group_invite", M{"group_id": m.GroupID, "msgseq": m.Body["msg_seq"], "flag": m.Flag})
+			if err == nil && e.protocolV3.Load() {
+				err = confirmedSuccess(result)
+			}
+		} else if m.RequestID > 0 && m.RequestType > 0 {
+			var result json.RawMessage
+			result, err = e.call(m.Account(), "approve_group_apply", M{"group_id": m.GroupID, "request_id": m.RequestID, "request_type": m.RequestType, "request_extra": m.RequestExtra})
+			if err == nil && e.protocolV3.Load() {
+				err = confirmedSuccess(result)
+			}
+		} else if number(m.Body["msg_seq"]) > 0 || number(m.Body["msgseq"]) > 0 {
+			seq := m.Body["msg_seq"]
+			if number(seq) <= 0 {
+				seq = m.Body["msgseq"]
+			}
+			var result json.RawMessage
+			result, err = e.call(m.Account(), "approve_group_invite", M{"group_id": m.GroupID, "msgseq": seq, "flag": m.Flag})
+			if err == nil && e.protocolV3.Load() {
+				err = confirmedSuccess(result)
+			}
 		}
 		if err != nil {
 			log.Printf("群申请处理失败：%v", err)
 		}
 	}
+}
+
+func eventAllows(event Event, action string) bool {
+	for _, allowed := range event.Actions {
+		if allowed == action {
+			return true
+		}
+	}
+	return false
+}
+
+// Codex 修改：同时检查 3.0 Action data 中的业务 success，避免把未通过的审批记成成功。
+func confirmedSuccess(raw json.RawMessage) error {
+	var response struct {
+		Success *bool `json:"success"`
+	}
+	if json.Unmarshal(raw, &response) == nil && response.Success != nil && !*response.Success {
+		return errors.New("萌卡接口未确认操作成功")
+	}
+	return nil
+}
+
+// Codex 修改：3.0 要求使用当前好友申请列表中的 request_key，且必须唯一匹配申请人。
+func (e *Engine) approveFriendRequest(event Event) error {
+	account := event.Account()
+	if account.SelfID <= 0 || event.Author() <= 0 {
+		return errors.New("好友申请缺少账号或申请人信息，未自动处理")
+	}
+	raw, err := e.call(account, "get_friend_requests", M{"count": 100})
+	if err != nil {
+		return err
+	}
+	var requests []struct {
+		RequestKey string `json:"request_key"`
+		UserID     int64  `json:"user_id"`
+		UserUID    string `json:"user_uid"`
+	}
+	if err := json.Unmarshal(raw, &requests); err != nil {
+		return errors.New("好友申请列表回包格式不正确，未自动处理")
+	}
+	keys := map[string]bool{}
+	for _, request := range requests {
+		if request.RequestKey == "" || request.UserID != event.Author() {
+			continue
+		}
+		if event.UserUID != "" && request.UserUID != "" && request.UserUID != event.UserUID {
+			continue
+		}
+		keys[request.RequestKey] = true
+	}
+	if len(keys) != 1 {
+		return fmt.Errorf("当前列表中找到 %d 条匹配好友申请，未自动处理", len(keys))
+	}
+	var requestKey string
+	for key := range keys {
+		requestKey = key
+	}
+	raw, err = e.call(account, "set_friend_request", M{"request_key": requestKey, "approve": true})
+	if err != nil {
+		return err
+	}
+	return confirmedSuccess(raw)
 }
 
 func answerFor(c Config, m Event, message string) (string, bool) {
@@ -829,7 +1102,12 @@ func (e *Engine) runGroupSigns(a Account, ids []string) string {
 			defer wg.Done()
 			for index := range jobs {
 				id := ids[index]
-				_, err := e.call(a, "group_sign", M{"group_id": number(id)})
+				var raw json.RawMessage
+				raw, err := e.call(a, "group_sign", M{"group_id": number(id)})
+				// Codex 修改：定时打卡也检查 3.0 回包的业务结果。
+				if err == nil && e.protocolV3.Load() {
+					err = confirmedSuccess(raw)
+				}
 				results[index] = signResult{id: id, err: err}
 			}
 		}()

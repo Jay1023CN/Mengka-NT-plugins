@@ -1132,6 +1132,12 @@ func (e *Engine) execute(m Event, c Config, cmd Command, arg string) (string, er
 		if err != nil {
 			return "", err
 		}
+		// Codex 修改：检查 3.0 群打卡回包中的业务 success 字段。
+		if e.protocolV3.Load() && action == "group_sign" {
+			if err := confirmedSuccess(raw); err != nil {
+				return "", err
+			}
+		}
 		result, replyErr := commandAPIReply(cmd.Word, p, raw)
 		if replyErr != nil {
 			return "", replyErr
@@ -1176,14 +1182,14 @@ var commandMenuGroups = []commandMenuGroup{
 	{"群发菜单", []string{"qunfa"}},
 	{"定时任务", []string{"loop", "timed", "timedss"}},
 	{"群管功能", []string{"assist"}},
-	{"群聊打卡", []string{"daka"}},
-	{"群内头衔", []string{"touxian"}},
+	{"群打卡菜单", []string{"daka"}},
+	{"群头衔菜单", []string{"touxian"}},
 	{"问答功能", []string{"qa"}},
 	{"艾特处理", []string{"at", "poke", "emoji"}},
 	{"续火菜单", []string{"xuhuo"}},
-	{"秒赞秒评", []string{"miao"}},
+	{"秒赞秒评菜单", []string{"miao"}},
 	{"点歌菜单", []string{"diange"}},
-	{"实用工具", []string{"rand", "daifa", "like", "charset", "pen", "speed"}},
+	{"QQ工具", []string{"rand", "daifa", "like", "charset", "pen", "speed"}},
 	{"账号功能", []string{"account", "beizhu", "persona"}},
 	{"菜单设置", []string{"menucfg", "custom_menu", "menu_fix"}},
 	{"其他功能", []string{"online_notify", "feedback", "search"}},

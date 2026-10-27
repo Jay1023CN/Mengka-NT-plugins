@@ -91,7 +91,8 @@ func run() error {
 	}
 	client.OnEvent = engine.Submit
 	client.OnLifecycle = func(event string) {
-		if event == "activate" {
+		// Codex 修改：兼容旧版 activate 与新版 started 生命周期。
+		if event == "activate" || event == "started" {
 			engine.Start()
 		}
 	}

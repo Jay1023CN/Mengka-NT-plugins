@@ -26,6 +26,7 @@ type Frame struct {
 	Error          string          `json:"error"`
 	Transport      string          `json:"transport"`
 	APIVersion     string          `json:"api_version"`
+	FrameworkAPI   string          `json:"framework_api"`
 	ConfigRevision *int64          `json:"config_revision"`
 	Revision       int64           `json:"revision"`
 	Config         map[string]any  `json:"config"`
@@ -40,6 +41,7 @@ type Client struct {
 	seq         atomic.Uint64
 	ready       atomic.Bool
 	active      atomic.Bool
+	modernIPC   atomic.Bool
 	allowed     map[string]bool
 	done        chan struct{}
 	closeOnce   sync.Once
@@ -55,8 +57,9 @@ func New(out io.Writer, actions []string) *Client {
 	}
 	return c
 }
-func (c *Client) Ready() bool  { return c.ready.Load() }
-func (c *Client) Active() bool { return c.active.Load() }
+func (c *Client) Ready() bool     { return c.ready.Load() }
+func (c *Client) Active() bool    { return c.active.Load() }
+func (c *Client) ModernIPC() bool { return c.modernIPC.Load() }
 
 func (c *Client) SetActive(v bool) { c.active.Store(v) }
 func (c *Client) Write(v any) error {
@@ -70,7 +73,7 @@ func (c *Client) Write(v any) error {
 	return json.NewEncoder(c.writer).Encode(v)
 }
 func (c *Client) Hello(id, version string) error {
-	return c.Write(map[string]any{"type": "hello", "api_version": "1", "plugin_id": id, "version": version})
+	return c.Write(map[string]any{"type": "hello", "api_version": "1", "framework_api": "3.0.0", "plugin_id": id, "version": version})
 }
 func (c *Client) Close() {
 	c.closeOnce.Do(func() { close(c.done); c.Disconnect() })
@@ -141,13 +144,25 @@ func (c *Client) Run(ctx context.Context, in io.Reader) error {
 		}
 		switch f.Type {
 		case "ready":
-			if c.Ready() || f.Transport != "native-ipc-v1" || f.APIVersion != "1" || f.ConfigRevision == nil || *f.ConfigRevision < 0 || f.Config == nil {
+			if c.Ready() || (f.Transport != "" && f.Transport != "native-ipc-v1") || (f.APIVersion != "" && f.APIVersion != "1") {
 				return errors.New("萌卡 ready 契约不完整或版本不匹配")
 			}
-			revision = *f.ConfigRevision
+			legacyReady := f.FrameworkAPI != "3.0.0" && f.Transport == "native-ipc-v1" && f.APIVersion == "1" && f.ConfigRevision != nil && *f.ConfigRevision >= 0 && f.Config != nil
+			if legacyReady {
+				revision = *f.ConfigRevision
+			} else {
+				// Codex 修改：3.0 IPC 在 ready 后直接运行，不依赖 2.5.4 的配置与 activate 帧。
+				c.modernIPC.Store(true)
+			}
 			c.ready.Store(true)
-			if c.OnConfig != nil {
+			if legacyReady && c.OnConfig != nil {
 				c.OnConfig(f.Config, revision)
+			}
+			if !legacyReady {
+				c.active.Store(true)
+				if c.OnLifecycle != nil {
+					c.OnLifecycle("activate")
+				}
 			}
 		case "config":
 			if !c.Ready() {
@@ -186,16 +201,16 @@ func (c *Client) Run(ctx context.Context, in io.Reader) error {
 			if !c.Ready() {
 				return errors.New("收到生命周期消息时 IPC 尚未就绪")
 			}
-			if f.Event == "activate" {
+			if f.Event == "activate" || f.Event == "started" {
 				c.active.Store(true)
 			}
-			if f.Event == "stop" {
+			if f.Event == "stop" || f.Event == "stopping" || f.Event == "stopped" {
 				c.active.Store(false)
 			}
 			if c.OnLifecycle != nil {
 				c.OnLifecycle(f.Event)
 			}
-			if f.Event == "stop" {
+			if f.Event == "stop" && !c.ModernIPC() {
 				return nil
 			}
 		case "action_stream":

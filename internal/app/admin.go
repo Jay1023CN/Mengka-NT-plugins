@@ -198,9 +198,8 @@ func StartAdmin(e *Engine, settings *ServiceSettings, forward *mengka.Forward, u
 			respond(w, 400, M{"error": "联系人类型应为 groups 或 friends"})
 			return
 		}
-		id, clientType, _ := strings.Cut(key, ":")
-		selfID, _ := strconv.ParseInt(id, 10, 64)
-		raw, err := e.call(Account{SelfID: selfID, ClientType: clientType}, action, M{})
+		current, _ := e.Account(key)
+		raw, err := e.call(current, action, M{})
 		if err != nil {
 			respond(w, 502, M{"error": "读取当前 QQ 联系人失败：" + err.Error()})
 			return
@@ -226,9 +225,8 @@ func StartAdmin(e *Engine, settings *ServiceSettings, forward *mengka.Forward, u
 				return
 			}
 			c = state.Config
-			id, clientType, _ := strings.Cut(key, ":")
-			m.SelfID, _ = strconv.ParseInt(id, 10, 64)
-			m.ClientType = clientType
+			current, _ := e.Account(key)
+			m.SelfID, m.ClientType, m.ProtocolID, m.AccountKey = current.SelfID, current.ClientType, current.ProtocolID, current.Key()
 		}
 		global, err := e.Store.Global()
 		if err != nil {
@@ -528,16 +526,14 @@ func StartAdmin(e *Engine, settings *ServiceSettings, forward *mengka.Forward, u
 				respond(w, 400, M{"error": "请输入有效的接口名称"})
 				return
 			}
-			id, clientType, _ := strings.Cut(key, ":")
-			selfID, _ := strconv.ParseInt(id, 10, 64)
+			current, _ := e.Account(key)
 			if body.Params == nil {
 				body.Params = M{}
 			}
-			body.Params["self_id"], body.Params["client_type"] = selfID, clientType
-			ctx, cancel := context.WithTimeout(r.Context(), actionTimeout(body.Action))
-			defer cancel()
+			body.Params["self_id"], body.Params["client_type"] = current.SelfID, current.ClientType
 			started := time.Now()
-			result, err := e.Client.Call(ctx, body.Action, body.Params)
+			// Codex 修改：接口调试也走账号适配层，按框架版本注入正确的账号标识。
+			result, err := e.call(current, body.Action, body.Params)
 			if err != nil {
 				respond(w, 502, M{"error": err.Error()})
 				return

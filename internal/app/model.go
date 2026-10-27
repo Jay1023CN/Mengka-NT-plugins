@@ -11,20 +11,98 @@ import (
 	"time"
 )
 
-// Codex 修改：更新本次菜单版本号。
-const Version = "1.0.15"
+// Codex 修改：更新版本号并为萌卡 2.5.4 与 3.0 账号协议留出兼容字段。
+const Version = "1.0.16"
 const PluginID = "catherina"
 
 type M = map[string]any
 type Account struct {
 	SelfID     int64  `json:"self_id"`
 	ClientType string `json:"client_type"`
+	ProtocolID int64  `json:"protocol_id"`
+	AccountKey string `json:"key,omitempty"`
 	Nickname   string `json:"nickname"`
 	Status     int    `json:"status"`
 	Enabled    bool   `json:"enabled"`
 }
 
-func (a Account) Key() string { return fmt.Sprintf("%d:%s", a.SelfID, a.ClientType) }
+// Codex 修改：统一读取 2.5.4 的 client_type 与 3.0 的嵌套 protocol 账号回包。
+func (a *Account) UnmarshalJSON(data []byte) error {
+	var raw struct {
+		SelfID     int64           `json:"self_id"`
+		ClientType string          `json:"client_type"`
+		ProtocolID int64           `json:"protocol_id"`
+		Protocol   json.RawMessage `json:"protocol"`
+		Nickname   string          `json:"nickname"`
+		Status     json.RawMessage `json:"status"`
+		Online     *bool           `json:"online"`
+		Enabled    bool            `json:"enabled"`
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	protocolID := raw.ProtocolID
+	clientType := normalizeClientType(raw.ClientType)
+	if len(raw.Protocol) > 0 && string(raw.Protocol) != "null" {
+		var protocol struct {
+			ID       int64  `json:"id"`
+			Type     string `json:"type"`
+			Platform string `json:"platform"`
+		}
+		if err := json.Unmarshal(raw.Protocol, &protocol); err != nil {
+			return err
+		}
+		protocolID = protocol.ID
+		if clientType == "" {
+			clientType = normalizeClientType(protocol.Type)
+		}
+		if clientType == "" {
+			clientType = normalizeClientType(protocol.Platform)
+		}
+	}
+	status := 0
+	if len(raw.Status) > 0 {
+		if err := json.Unmarshal(raw.Status, &status); err != nil {
+			var label string
+			if string(raw.Status) == "true" {
+				status = 1
+			} else if json.Unmarshal(raw.Status, &label) == nil {
+				if strings.EqualFold(label, "online") {
+					status = 1
+				} else if parsed, parseErr := strconv.Atoi(label); parseErr == nil {
+					status = parsed
+				}
+			}
+		}
+	}
+	if raw.Online != nil {
+		status = 0
+		if *raw.Online {
+			status = 1
+		}
+	}
+	*a = Account{SelfID: raw.SelfID, ClientType: normalizeClientType(clientType), ProtocolID: protocolID, Nickname: raw.Nickname, Status: status, Enabled: raw.Enabled}
+	return nil
+}
+
+func normalizeClientType(value string) string {
+	value = strings.ToLower(strings.TrimSpace(value))
+	if strings.Contains(value, "android") || strings.Contains(value, "phone") || strings.Contains(value, "tablet") || value == "mobile" {
+		return "android"
+	}
+	if strings.Contains(value, "linux") {
+		return "linuxqq"
+	}
+	return ""
+}
+
+// Codex 修改：单账号保留旧配置键，多协议实例使用 Store 分配的稳定键。
+func (a Account) Key() string {
+	if a.AccountKey != "" {
+		return a.AccountKey
+	}
+	return fmt.Sprintf("%d:%s", a.SelfID, a.ClientType)
+}
 
 type Segment struct {
 	Type string `json:"type"`
@@ -37,6 +115,9 @@ type Event struct {
 	PostType   string    `json:"post_type"`
 	SelfID     int64     `json:"self_id"`
 	ClientType string    `json:"client_type"`
+	ProtocolID int64     `json:"protocol_id"`
+	AccountKey string    `json:"account_key,omitempty"`
+	SubType    string    `json:"sub_type"`
 	UserID     int64     `json:"user_id"`
 	UserUID    string    `json:"user_uid"`
 	GroupID    int64     `json:"group_id"`
@@ -47,6 +128,7 @@ type Event struct {
 	AltMessage string    `json:"alt_message"`
 	Source     string    `json:"source"`
 	Message    []Segment `json:"message"`
+	Msg        M         `json:"msg"`
 	Sender     struct {
 		UserID   int64  `json:"user_id"`
 		Nickname string `json:"nickname"`
@@ -56,16 +138,53 @@ type Event struct {
 	Receiver struct {
 		UserID int64 `json:"user_id"`
 	} `json:"receiver"`
-	Operator     M      `json:"operator"`
-	Target       M      `json:"target"`
-	Body         M      `json:"body"`
-	Flag         string `json:"flag"`
-	RequestID    int64  `json:"request_id"`
-	RequestType  int64  `json:"request_type"`
-	RequestExtra int64  `json:"request_extra"`
+	Operator     M        `json:"operator"`
+	Target       M        `json:"target"`
+	Body         M        `json:"body"`
+	Actions      []string `json:"actions"`
+	Flag         string   `json:"flag"`
+	RequestKey   string   `json:"request_key"`
+	RequestID    int64    `json:"request_id"`
+	RequestType  int64    `json:"request_type"`
+	RequestExtra int64    `json:"request_extra"`
 }
 
-func (e Event) Account() Account { return Account{SelfID: e.SelfID, ClientType: e.ClientType} }
+// Codex 修改：兼容 3.0 好友申请的字符串 request_id，避免整个事件因类型差异被丢弃。
+func (e *Event) UnmarshalJSON(data []byte) error {
+	type eventJSON Event
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	if raw, ok := fields["request_id"]; ok {
+		var requestID int64
+		if err := json.Unmarshal(raw, &requestID); err != nil {
+			var textID string
+			if json.Unmarshal(raw, &textID) == nil {
+				requestID, err = strconv.ParseInt(strings.TrimSpace(textID), 10, 64)
+			}
+			if err != nil {
+				delete(fields, "request_id")
+			} else {
+				fields["request_id"], _ = json.Marshal(requestID)
+			}
+		}
+	}
+	encoded, err := json.Marshal(fields)
+	if err != nil {
+		return err
+	}
+	var decoded eventJSON
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		return err
+	}
+	*e = Event(decoded)
+	return nil
+}
+
+func (e Event) Account() Account {
+	return Account{SelfID: e.SelfID, ClientType: e.ClientType, ProtocolID: e.ProtocolID, AccountKey: e.AccountKey}
+}
 func (e Event) Author() int64 {
 	if e.Sender.UserID > 0 {
 		return e.Sender.UserID

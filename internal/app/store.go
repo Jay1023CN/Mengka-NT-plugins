@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -44,6 +45,7 @@ func OpenStore(dir string) (*Store, error) {
  CREATE TABLE IF NOT EXISTS service_settings(id INTEGER PRIMARY KEY CHECK(id=1),data TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS global_settings(id INTEGER PRIMARY KEY CHECK(id=1),data TEXT NOT NULL,revision INTEGER NOT NULL DEFAULT 0);
  CREATE TABLE IF NOT EXISTS account_state(account TEXT PRIMARY KEY,data TEXT NOT NULL,revision INTEGER NOT NULL DEFAULT 0);
+ CREATE TABLE IF NOT EXISTS account_identity(selector TEXT PRIMARY KEY,account TEXT NOT NULL UNIQUE);
  CREATE TABLE IF NOT EXISTS seen(account TEXT NOT NULL,id TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(account,id));
  CREATE TABLE IF NOT EXISTS messages(account TEXT NOT NULL,id INTEGER NOT NULL,seq INTEGER NOT NULL,group_id INTEGER NOT NULL,data TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(account,id));
  CREATE INDEX IF NOT EXISTS messages_seq ON messages(account,group_id,seq);
@@ -179,7 +181,7 @@ func (s *Store) PatchGlobal(revision int64, patch map[string]json.RawMessage) (G
 	seenAccounts := map[string]bool{}
 	for _, key := range out.Config.DisabledAccounts {
 		parts := strings.Split(key, ":")
-		if len(parts) != 2 || (parts[1] != "android" && parts[1] != "linuxqq") {
+		if !accountPattern.MatchString(key) {
 			return out, errors.New("停用账号格式不正确")
 		}
 		id, parseErr := strconv.ParseInt(parts[0], 10, 64)
@@ -202,6 +204,84 @@ func (s *Store) PatchGlobal(revision int64, patch map[string]json.RawMessage) (G
 	return out, err
 }
 func (s *Store) Close() error { return s.db.Close() }
+
+// Codex 修改：将 QQ、平台和 protocol_id 映射到持久化账号键，保留升级前的单账号配置。
+func (s *Store) AssignAccountKeys(accounts []Account) ([]Account, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	type candidate struct {
+		account  Account
+		selector string
+		base     string
+	}
+	items := make([]candidate, 0, len(accounts))
+	counts := map[string]int{}
+	selectorCounts := map[string]int{}
+	for _, account := range accounts {
+		if account.SelfID <= 0 || (account.ClientType != "android" && account.ClientType != "linuxqq") || account.ProtocolID < 0 {
+			continue
+		}
+		base := fmt.Sprintf("%d:%s", account.SelfID, account.ClientType)
+		selector := fmt.Sprintf("%s:%d", base, account.ProtocolID)
+		items = append(items, candidate{account: account, selector: selector, base: base})
+		counts[base]++
+		selectorCounts[selector]++
+	}
+	sort.Slice(items, func(i, j int) bool {
+		if items[i].base != items[j].base {
+			return items[i].base < items[j].base
+		}
+		return items[i].account.ProtocolID < items[j].account.ProtocolID
+	})
+
+	rows, err := s.db.Query("SELECT selector,account FROM account_identity")
+	if err != nil {
+		return nil, err
+	}
+	known, used := map[string]string{}, map[string]bool{}
+	for rows.Next() {
+		var selector, key string
+		if err = rows.Scan(&selector, &key); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		known[selector], used[key] = key, true
+	}
+	if err = rows.Err(); err != nil {
+		rows.Close()
+		return nil, err
+	}
+	if err = rows.Close(); err != nil {
+		return nil, err
+	}
+
+	assigned := make([]Account, 0, len(items))
+	for _, item := range items {
+		// 相同 selector 无法由 3.0 路由区分，丢弃歧义项，避免串用另一个账号的数据。
+		if selectorCounts[item.selector] != 1 {
+			continue
+		}
+		key, exists := known[item.selector]
+		if !exists {
+			key = item.base
+			if counts[item.base] > 1 || used[key] {
+				key = item.selector
+			}
+			if used[key] {
+				return nil, fmt.Errorf("协议账号键冲突：%s", key)
+			}
+			if _, err = s.db.Exec("INSERT INTO account_identity(selector,account) VALUES(?,?)", item.selector, key); err != nil {
+				return nil, err
+			}
+			known[item.selector], used[key] = key, true
+		}
+		item.account.AccountKey = key
+		assigned = append(assigned, item.account)
+	}
+	return assigned, nil
+}
+
 func (s *Store) load(key string) (State, error) {
 	out := State{Config: defaults()}
 	var raw string
@@ -443,7 +523,7 @@ func (s *Store) Prune() error {
 }
 
 var timePattern = regexp.MustCompile(`^([01]\d|2[0-3]):[0-5]\d$`)
-var accountPattern = regexp.MustCompile(`^[1-9]\d{0,14}:(android|linuxqq)$`)
+var accountPattern = regexp.MustCompile(`^[1-9]\d{0,14}:(android|linuxqq)(:\d{1,19})?$`)
 
 func Validate(c Config) error {
 	if c.Owner < 0 || c.Owner > 999999999999999 {

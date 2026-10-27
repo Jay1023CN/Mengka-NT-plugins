@@ -1,7 +1,10 @@
 .build/
 dist/
 data/
+*.exe
 *.db
+*.db-shm
+*.db-wal
 *.log
 .env
 .env.*
