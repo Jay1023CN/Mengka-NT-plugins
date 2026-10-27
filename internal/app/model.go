@@ -11,7 +11,8 @@ import (
 	"time"
 )
 
-const Version = "1.0.13"
+// Codex 修改：更新本次菜单版本号。
+const Version = "1.0.14"
 const PluginID = "catherina"
 
 type M = map[string]any

@@ -1171,8 +1171,29 @@ type commandMenuGroup struct {
 	Features []string
 }
 
+// Codex 修改：按功能拆分菜单入口，保留旧分类入口以兼容已有用法。
 var commandMenuGroups = []commandMenuGroup{
 	{"群发菜单", []string{"qunfa"}},
+	{"定时任务", []string{"loop", "timed", "timedss"}},
+	{"群管功能", []string{"assist"}},
+	{"群聊打卡", []string{"daka"}},
+	{"群内头衔", []string{"touxian"}},
+	{"问答功能", []string{"qa"}},
+	{"艾特处理", []string{"at", "poke", "emoji"}},
+	{"续火菜单", []string{"xuhuo"}},
+	{"秒赞秒评", []string{"miao"}},
+	{"点歌菜单", []string{"diange"}},
+	{"实用工具", []string{"rand", "daifa", "like", "charset", "pen", "speed"}},
+	{"账号功能", []string{"account", "beizhu", "persona"}},
+	{"菜单设置", []string{"menucfg", "custom_menu", "menu_fix"}},
+	{"其他功能", []string{"online_notify", "feedback", "search"}},
+}
+
+var legacyCommandMenuGroups = []commandMenuGroup{
+	{"群打卡菜单", []string{"daka"}},
+	{"群头衔菜单", []string{"touxian"}},
+	{"秒赞秒评菜单", []string{"miao"}},
+	{"QQ工具", []string{"rand", "daifa", "like", "charset", "pen", "speed"}},
 	{"自动任务菜单", []string{"loop", "timed", "timedss"}},
 	{"群聊管理菜单", []string{"assist", "touxian", "daka"}},
 	{"消息互动菜单", []string{"at", "poke", "emoji", "xuhuo", "qa", "pen", "miao"}},
@@ -1181,17 +1202,41 @@ var commandMenuGroups = []commandMenuGroup{
 }
 
 func buildCommandCatalogue(c Config, m Event, shared bool) string {
-	title := "当前 QQ 菜单"
-	if shared {
-		title = "Catherina 总菜单"
-	}
-	lines := []string{title, "----"}
+	lines := []string{"Catherina", "----"}
+	var entries []string
 	for _, group := range commandMenuGroups {
 		if shared || commandGroupHasCommands(c, m, group) {
-			lines = append(lines, group.Trigger)
+			entries = append(entries, group.Trigger)
 		}
 	}
+	width := 0
+	for i := 0; i < len(entries); i += 2 {
+		if w := menuDisplayWidth(entries[i]); w > width {
+			width = w
+		}
+	}
+	for i := 0; i < len(entries); i += 2 {
+		line := entries[i]
+		if i+1 < len(entries) {
+			padding := width - menuDisplayWidth(line) + 2
+			line += strings.Repeat("　", padding/2) + strings.Repeat(" ", padding%2) + entries[i+1]
+		}
+		lines = append(lines, line)
+	}
 	return strings.Join(lines, "\n")
+}
+
+// Codex 修改：按中文全角和英文半角计算目录列宽。
+func menuDisplayWidth(value string) int {
+	width := 0
+	for _, r := range value {
+		if unicode.Is(unicode.Han, r) || r == '　' {
+			width += 2
+		} else {
+			width++
+		}
+	}
+	return width
 }
 
 func commandGroupHasCommands(c Config, m Event, group commandMenuGroup) bool {
@@ -1204,12 +1249,18 @@ func commandGroupHasCommands(c Config, m Event, group commandMenuGroup) bool {
 }
 
 func commandCategoryHelp(c Config, m Event, input string) (string, bool) {
-	for _, group := range commandMenuGroups {
+	for _, group := range append(append([]commandMenuGroup(nil), commandMenuGroups...), legacyCommandMenuGroups...) {
 		if input != group.Trigger {
 			continue
 		}
 		if len(group.Features) == 1 {
-			return featureHelp(c, m, group.Features[0]), true
+			body := featureHelp(c, m, group.Features[0])
+			if strings.TrimSpace(c.Replies[group.Features[0]]) == "" {
+				if _, rest, ok := strings.Cut(body, "\n----\n"); ok {
+					body = group.Trigger + "\n----\n" + rest
+				}
+			}
+			return body, true
 		}
 		var lines []string
 		for _, id := range group.Features {
@@ -1225,14 +1276,9 @@ func commandCategoryHelp(c Config, m Event, input string) (string, bool) {
 			if len(usages) == 0 {
 				continue
 			}
-			title := id
-			for _, feature := range Features {
-				if feature.ID == id {
-					title = feature.Title
-					break
-				}
+			if len(lines) > 0 {
+				lines = append(lines, "-")
 			}
-			lines = append(lines, "", title)
 			if reply := c.Replies[id]; reply != "" {
 				lines = append(lines, reply)
 			} else {
@@ -1242,7 +1288,7 @@ func commandCategoryHelp(c Config, m Event, input string) (string, bool) {
 		if len(lines) == 0 {
 			return "【" + group.Trigger + "】\n这类功能当前没有可用指令。", true
 		}
-		return group.Trigger + "\n----" + strings.Join(lines, "\n") + "\n\n返回：" + commandTrigger(c, "总菜单"), true
+		return group.Trigger + "\n----\n" + strings.Join(lines, "\n"), true
 	}
 	return "", false
 }
@@ -1293,7 +1339,7 @@ func featureHelp(c Config, m Event, feature string) string {
 		if feature == "qunfa" {
 			note = "\n\n先添加接收对象；排除名单中的群和好友不会收到群发。"
 		}
-		return f.Title + "菜单\n----\n" + strings.Join(lines, "\n") + note + "\n\n返回：" + commandTrigger(c, "总菜单")
+		return f.Title + "菜单\n----\n" + strings.Join(lines, "\n") + note
 	}
 	return "暂无可用指令。"
 }

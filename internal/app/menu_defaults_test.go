@@ -43,7 +43,7 @@ func TestMenuPreviewTracksAliasesAndCommandSwitches(t *testing.T) {
 		t.Fatal(err)
 	}
 	first := readMenuPreview(t, managed, base, token)
-	if len(first.Categories) != 6 || !strings.Contains(first.Global, "----\n群发菜单") || strings.Contains(first.Global, "初始化配置") {
+	if len(first.Categories) != len(commandMenuGroups) || !strings.Contains(first.Global, "----\n群发菜单") || strings.Contains(first.Global, "初始化配置") {
 		t.Fatalf("top level is not a short directory: %s", first.Global)
 	}
 	if !strings.Contains(first.Preview.Features["rand"], "抽字母 [长度]") {
@@ -149,5 +149,29 @@ func TestMassMenuAndExclusionCommandsAgree(t *testing.T) {
 	menu := featureHelp(state.Config, m, "qunfa")
 	if !strings.Contains(menu, "群发排除名单（名单中的对象不会收到群发）\n群发排除群 添加 群号") || !strings.Contains(menu, "群发排除好友 列表") {
 		t.Fatalf("missing exclusion section: %s", menu)
+	}
+}
+
+// Codex 修改：确保主菜单每个入口都能打开对应子菜单，旧入口仍可用。
+func TestMenuDirectoryEntriesOpenMatchingMenus(t *testing.T) {
+	c := defaults()
+	m := Event{SelfID: 10001, UserID: 10001}
+	main := buildGlobalMenu()
+	for _, group := range commandMenuGroups {
+		if menuDisplayWidth(group.Trigger) != 8 {
+			t.Errorf("entry %s does not occupy four Chinese character widths", group.Trigger)
+		}
+		if !strings.Contains(main, group.Trigger) {
+			t.Errorf("missing entry %s", group.Trigger)
+		}
+		body, ok := commandCategoryHelp(c, m, group.Trigger)
+		if !ok || !strings.HasPrefix(body, group.Trigger+"\n----\n") {
+			t.Errorf("entry %s returned %q", group.Trigger, body)
+		}
+	}
+	for _, group := range legacyCommandMenuGroups {
+		if _, ok := commandCategoryHelp(c, m, group.Trigger); !ok {
+			t.Errorf("legacy entry %s is unavailable", group.Trigger)
+		}
 	}
 }

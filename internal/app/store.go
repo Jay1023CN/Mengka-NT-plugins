@@ -20,6 +20,7 @@ import (
 
 var ErrConflict = errors.New("配置已被其他页面修改，请重新读取后再保存")
 
+// Codex 修改：保留旧菜单入口并避免其触发词与自定义配置冲突。
 type Store struct {
 	db   *sql.DB
 	mu   sync.Mutex
@@ -503,7 +504,7 @@ func Validate(c Config) error {
 		}
 	}
 	seen := map[string]bool{}
-	for _, group := range commandMenuGroups {
+	for _, group := range append(append([]commandMenuGroup(nil), commandMenuGroups...), legacyCommandMenuGroups...) {
 		seen[group.Trigger] = true
 	}
 	commandNames := map[string]bool{}
