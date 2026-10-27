@@ -396,8 +396,8 @@ func StartAdmin(e *Engine, settings *ServiceSettings, forward *mengka.Forward, u
 		respond(w, 200, M{"ok": true})
 	})
 	mux.HandleFunc("POST /api/update/check", func(w http.ResponseWriter, r *http.Request) {
-		if !updater.CheckAsync(false) {
-			respond(w, 409, M{"error": "更新检查正在进行"})
+		if !updater.CheckOrJoin() {
+			respond(w, 409, M{"error": "更新任务正在进行"})
 			return
 		}
 		respond(w, 202, M{"ok": true})

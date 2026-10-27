@@ -66,6 +66,7 @@ type Updater struct {
 	mu        sync.Mutex
 	state     UpdateState
 	busy      bool
+	checking  bool
 	wg        sync.WaitGroup
 	managed   atomic.Bool
 	Shutdown  func(string)
@@ -107,12 +108,27 @@ func (u *Updater) Stop() {
 }
 func (u *Updater) State() UpdateState { u.mu.Lock(); defer u.mu.Unlock(); return u.state }
 func (u *Updater) CheckAsync(install bool) bool {
+	return u.startCheck(install, false)
+}
+
+// CheckOrJoin lets the admin UI reuse an update check already started in the background.
+func (u *Updater) CheckOrJoin() bool {
+	return u.startCheck(false, true)
+}
+
+func (u *Updater) startCheck(install, join bool) bool {
 	u.mu.Lock()
-	if u.busy || u.ctx.Err() != nil {
+	if u.busy {
+		joined := join && u.checking
+		u.mu.Unlock()
+		return joined
+	}
+	if u.ctx.Err() != nil {
 		u.mu.Unlock()
 		return false
 	}
 	u.busy = true
+	u.checking = true
 	u.state.Status = "checking"
 	u.state.Error = ""
 	u.state.Checked = time.Now().Format(time.RFC3339)
@@ -123,6 +139,7 @@ func (u *Updater) CheckAsync(install bool) bool {
 		err := u.check(install)
 		u.mu.Lock()
 		u.busy = false
+		u.checking = false
 		if err != nil {
 			u.state.Status = "error"
 			u.state.Error = err.Error()
