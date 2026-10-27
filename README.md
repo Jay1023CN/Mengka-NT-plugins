@@ -4,7 +4,7 @@
 
 把群管理、消息回复、菜单、群发和定时任务放在一个管理页面里。菜单正文、自定义菜单、功能菜单与额外管理 QQ 由所有账号共用；自动功能、问答和任务按 QQ 保存。
 
-Catherina 与萌卡分别启动，通过 WebSocket 连接。支持 Windows x64、Linux x64 和 Linux ARM64。
+Catherina 支持两种运行方式：导入萌卡 NT 时使用原生 IPC；独立运行时可通过 WebSocket 连接。支持 Windows x64、Linux x64 和 Linux ARM64。
 
 [下载安装包](https://github.com/Jay1023CN/Mengka-NT-plugins/releases) · [反馈问题](https://github.com/Jay1023CN/Mengka-NT-plugins/issues)
 
@@ -14,9 +14,9 @@ GitHub 打不开时，可直接使用下面的加速下载地址，无需更换�
 
 | 平台 | 备用线路一 | 备用线路二 |
 | --- | --- | --- |
-| windows-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.9/Catherina-Mengka-1.0.9-windows-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.9/Catherina-Mengka-1.0.9-windows-amd64.zip) |
-| linux-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.9/Catherina-Mengka-1.0.9-linux-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.9/Catherina-Mengka-1.0.9-linux-amd64.zip) |
-| linux-arm64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.9/Catherina-Mengka-1.0.9-linux-arm64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.9/Catherina-Mengka-1.0.9-linux-arm64.zip) |
+| windows-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.10/Catherina-Mengka-1.0.10-windows-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.10/Catherina-Mengka-1.0.10-windows-amd64.zip) |
+| linux-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.10/Catherina-Mengka-1.0.10-linux-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.10/Catherina-Mengka-1.0.10-linux-amd64.zip) |
+| linux-arm64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.10/Catherina-Mengka-1.0.10-linux-arm64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.10/Catherina-Mengka-1.0.10-linux-arm64.zip) |
 
 ## 可以做什么
 
@@ -66,9 +66,9 @@ chmod +x Catherina
 
 ## 首次连接
 
-1. 打开管理页面，设置一个至少 8 位的管理密码。
-2. 在萌卡的“插件对接”中启用正向 WebSocket，创建服务令牌，并允许所需消息和事件。
-3. 进入 Catherina 的“连接与更新”，填写 WebSocket 地址及服务令牌，点击“保存并连接”。
+1. 萌卡 NT 需为 2.5.4 或更新版本。将成品包导入“插件 → 插件导入”，确认权限后启动。原生 IPC 不需要开放插件端口，也不需要填写服务令牌。
+2. 从萌卡插件卡片打开 Catherina 管理页面，首次进入时设置一个至少 8 位的管理密码。
+3. 若要独立运行 Catherina，在萌卡“插件对接”中启用正向 WebSocket，创建服务令牌，并在“连接与更新”填写地址和令牌。
 4. 从左侧选择要管理的 QQ，本人直接给自己发送指令即可使用，无需填写额外管理 QQ。
 5. 默认即可使用本人指令。需要自动回复或定时发送时，再配置发送名单和自动任务。
 
