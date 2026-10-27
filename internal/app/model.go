@@ -12,7 +12,7 @@ import (
 )
 
 // Codex 修改：更新本次菜单版本号。
-const Version = "1.0.14"
+const Version = "1.0.15"
 const PluginID = "catherina"
 
 type M = map[string]any

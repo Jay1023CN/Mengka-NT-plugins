@@ -24,11 +24,30 @@ func menuUsageFormat(usage string) string {
 		"一键群打卡（打卡名单）":                       "一键群打卡",
 		"飞速打卡（打卡名单）":                        "飞速打卡",
 		"禁言 @成员 10分钟":                       "禁言 @成员 时长",
-		"发群公告 内容（可加 | 图片URL）":               "发群公告 内容（可选：|图片网址）",
+		"发群公告 内容（可加 | 图片URL）":               "发群公告 内容\n发群公告 内容 | 图片URL",
 		"公告 内容（旧指令）":                        "公告 内容",
+		"确认发送（确认刚才预览的群或好友）":                 "确认发送",
+		"取消发送（放弃尚未发送的预览）":                   "取消发送",
+		"字符 统计/反转/全角/半角 内容":                 "字符 统计 内容\n字符 反转 内容\n字符 全角 内容\n字符 半角 内容",
 	}
 	if formatted, ok := replacements[usage]; ok {
-		return formatted
+		usage = formatted
 	}
-	return strings.TrimSpace(usage)
+	return stripMenuNotes(strings.TrimSpace(usage))
+}
+
+// Codex 修改：隐藏指令格式后面的解释性括号备注。
+func stripMenuNotes(usage string) string {
+	for {
+		start := strings.Index(usage, "（")
+		if start < 0 {
+			return strings.TrimSpace(usage)
+		}
+		end := strings.Index(usage[start+len("（"):], "）")
+		if end < 0 {
+			return strings.TrimSpace(usage)
+		}
+		end += start + len("（")
+		usage = usage[:start] + usage[end+len("）"):]
+	}
 }
