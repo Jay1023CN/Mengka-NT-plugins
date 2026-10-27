@@ -1,0 +1,10 @@
+.build/
+dist/
+data/
+*.db
+*.log
+.env
+.env.*
+release.key
+feed-key.txt
+key-overlay.json

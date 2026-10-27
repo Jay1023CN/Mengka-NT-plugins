@@ -8,16 +8,6 @@ Catherina 支持两种运行方式：导入萌卡 NT 时使用原生 IPC；独�
 
 [下载安装包](https://github.com/Jay1023CN/Mengka-NT-plugins/releases) · [反馈问题](https://github.com/Jay1023CN/Mengka-NT-plugins/issues)
 
-## 备用下载
-
-GitHub 打不开时，可直接使用下面的加速下载地址，无需更换设备。
-
-| 平台 | 备用线路一 | 备用线路二 |
-| --- | --- | --- |
-| windows-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.11/Catherina-Mengka-1.0.11-windows-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.11/Catherina-Mengka-1.0.11-windows-amd64.zip) |
-| linux-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.11/Catherina-Mengka-1.0.11-linux-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.11/Catherina-Mengka-1.0.11-linux-amd64.zip) |
-| linux-arm64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.11/Catherina-Mengka-1.0.11-linux-arm64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.11/Catherina-Mengka-1.0.11-linux-arm64.zip) |
-
 ## 可以做什么
 
 | 分类 | 功能 |
@@ -173,11 +163,11 @@ chmod +x Catherina
 
 ## GitHub 连接不稳定时
 
-程序启动后检查新版，此后每小时检查一次。检查版本或下载安装包时，连接失败、超时或文件不完整会自动切换备用线路；所有线路暂时不可用时保留当前版本，下次继续检查。
+程序启动后检查新版，此后每小时检查一次。下载失败或文件校验不通过时会保留当前版本，之后可以重新检查。
 
 在“连接与更新”点击“立即在线更新”即可开始。萌卡托管运行需要当前萌卡的管理员登录会话有效；页面会显示下载和安装进度。
 
-需要手动更新时，从本页的公开发布页或备用下载地址获取对应平台的 ZIP，再到萌卡“插件导入”安装，保留原来的数据目录。
+需要手动更新时，从本页的公开发布页获取对应平台的 ZIP，再到萌卡“插件导入”安装，保留原来的数据目录。
 
 ## 常见问题
 
@@ -217,7 +207,26 @@ ssh -L 18096:127.0.0.1:18096 user@host
 
 菜单页直接显示实际正文，“菜单”和“总菜单”共用同一份内容。自定义菜单、功能菜单回复和前后缀也由所有登录 QQ 共用。本人手动指令不依赖自动功能开关，明确停用的指令除外；自动功能支持批量开启或关闭。
 
-“给别人安装”提供公开发布页和备用下载地址，对方不需要访问你的管理域名，也不需要 GitHub 账号。对方将插件安装在自己的萌卡或机器上，使用自己的入口和登录会话。
+“给别人安装”提供公开发布页，对方将插件安装在自己的萌卡或机器上，使用自己的入口和登录会话。
+
+## 从源码构建
+
+需要 Go 1.26 或更新版本。克隆仓库后，在项目目录运行：
+
+```sh
+go build ./cmd/catherina
+```
+
+运行单元测试：
+
+```sh
+go test ./...
+```
+
+源码构建不包含发布签名密钥。发布版只接受签名校验通过的更新清单。
 
 1.0.2 等旧版未包含托管在线更新入口，需要先导入支持在线更新的版本一次。
-SDK 依据：https://github.com/Carlor-Official/Mengka-NT
+
+## 许可证
+
+JAY 持有版权的 Catherina 项目源码按 GNU GPL 第 3 版授权，具体条款见根目录 LICENSE。第三方字体和其他组件继续按各自许可证执行。
