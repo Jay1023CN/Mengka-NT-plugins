@@ -14,9 +14,9 @@ GitHub 打不开时，可直接使用下面的加速下载地址，无需更换�
 
 | 平台 | 备用线路一 | 备用线路二 |
 | --- | --- | --- |
-| windows-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.10/Catherina-Mengka-1.0.10-windows-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.10/Catherina-Mengka-1.0.10-windows-amd64.zip) |
-| linux-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.10/Catherina-Mengka-1.0.10-linux-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.10/Catherina-Mengka-1.0.10-linux-amd64.zip) |
-| linux-arm64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.10/Catherina-Mengka-1.0.10-linux-arm64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.10/Catherina-Mengka-1.0.10-linux-arm64.zip) |
+| windows-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.11/Catherina-Mengka-1.0.11-windows-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.11/Catherina-Mengka-1.0.11-windows-amd64.zip) |
+| linux-amd64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.11/Catherina-Mengka-1.0.11-linux-amd64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.11/Catherina-Mengka-1.0.11-linux-amd64.zip) |
+| linux-arm64 | [下载](https://gh-proxy.org/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.11/Catherina-Mengka-1.0.11-linux-arm64.zip) | [下载](https://ghfast.top/https://github.com/Jay1023CN/Mengka-NT-plugins/releases/download/v1.0.11/Catherina-Mengka-1.0.11-linux-arm64.zip) |
 
 ## 可以做什么
 
