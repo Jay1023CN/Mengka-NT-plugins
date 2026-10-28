@@ -12,7 +12,7 @@ import (
 )
 
 // Codex 修改：更新版本号并为萌卡 2.5.4 与 3.0 账号协议留出兼容字段。
-const Version = "1.0.16"
+const Version = "1.0.17"
 const PluginID = "catherina"
 
 type M = map[string]any

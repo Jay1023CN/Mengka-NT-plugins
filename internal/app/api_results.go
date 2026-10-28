@@ -49,17 +49,18 @@ func memberReply(group, id int64, member M) string {
 	return strings.Join(lines, "\n")
 }
 
+// Codex 修改：缩短操作错误提示，保留必要的结果核对步骤。
 func commandAPIReply(word string, params M, raw json.RawMessage) (string, error) {
 	var result M
 	if string(raw) != "null" && len(raw) > 0 {
 		if err := json.Unmarshal(raw, &result); err != nil {
-			return "", errors.New("萌卡返回的数据无法读取，请在接口调试页查看响应")
+			return "", errors.New("萌卡返回的数据无法读取，可在接口调试页查看响应。")
 		}
 	}
 	switch word {
 	case "账号状态":
 		if result == nil || number(result["self_id"]) <= 0 {
-			return "", errors.New("账号状态响应缺少 QQ 号，请重新读取")
+			return "", errors.New("账号状态没有返回 QQ 号，请重新读取。")
 		}
 		state, ok := map[int64]string{0: "离线", 1: "在线", 2: "登录中"}[number(result["status"])]
 		if !ok {
@@ -80,18 +81,18 @@ func commandAPIReply(word string, params M, raw json.RawMessage) (string, error)
 		if !ok || number(code) != 0 {
 			reason := firstText(result, "msg", "message")
 			if reason == "" {
-				reason = "接口没有确认成功"
+				reason = "萌卡未确认点赞成功"
 			}
 			return "", fmt.Errorf("名片点赞未成功：%s", reason)
 		}
 		return fmt.Sprintf("【名片点赞已完成】\nQQ：%d\n次数：%d", number(params["target_uin"]), number(params["like_count"])), nil
 	case "踢人", "头衔", "个性签名":
 		if confirmed, _ := result["success"].(bool); !confirmed {
-			return "", errors.New("接口没有确认操作成功，请先核对 QQ 中的结果")
+			return "", errors.New("萌卡未确认操作成功；请先核对 QQ 中的结果。")
 		}
 	case "公告", "发群公告":
 		if firstText(result, "notice_id") == "" {
-			return "", errors.New("公告接口没有返回公告编号，请先查看群公告确认结果")
+			return "", errors.New("群公告未返回编号，请到群里确认是否已发布。")
 		}
 	}
 	return actionReply(word, params), nil

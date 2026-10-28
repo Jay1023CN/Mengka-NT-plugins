@@ -1313,14 +1313,15 @@ func (e *Engine) prepareMass(m Event, body, target string) (string, error) {
 }
 
 func (e *Engine) cancelMass(m Event) string {
+	// Codex 修改：群发确认回复只保留当前状态和必要结果。
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	pending, ok := e.pendingMass[pendingMassKey(m)]
 	if !ok || pending.Author != m.Author() || time.Since(pending.Created) > 2*time.Minute {
-		return "【没有待确认的群发】\n当前没有你的发送预览。已开始的发送不受这条指令影响。"
+		return "没有待确认的发送预览。已开始的发送不会受影响。"
 	}
 	delete(e.pendingMass, pendingMassKey(m))
-	return "【已取消发送】\n刚才预览的消息没有发送。"
+	return "已取消，刚才预览的消息没有发送。"
 }
 
 func pendingMassKey(m Event) string {

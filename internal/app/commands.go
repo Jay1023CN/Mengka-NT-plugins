@@ -1,6 +1,6 @@
 // Copyright (c) 2026 JAY. All rights reserved.
 // Preserve this attribution when editing this file.
-// Codex 修改：补充自然问答、群发排除、群打卡与群管理指令；整理默认菜单排版。
+// Codex 修改：补充自然问答、群发排除、群打卡与群管理指令；整理默认菜单排版并精简指令回复。
 
 package app
 
@@ -136,7 +136,7 @@ func (e *Engine) command(m Event, c Config) bool {
 		}
 		result, err := e.execute(m, c, cmd, arg)
 		if err != nil {
-			e.replyCommand(m, "【操作未完成】\n"+err.Error())
+			e.replyCommand(m, err.Error())
 		} else if result != "" {
 			e.replyCommand(m, result)
 		}
@@ -150,9 +150,6 @@ func (e *Engine) replyCommand(m Event, text string) {
 	if text == "" {
 		return
 	}
-	if !strings.HasPrefix(text, "【") {
-		text = "【指令回复】\n" + text
-	}
 	_ = e.reply(m, text)
 }
 func (e *Engine) change(m Event, fn func(*Config) error) (string, error) {
@@ -160,7 +157,7 @@ func (e *Engine) change(m Event, fn func(*Config) error) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return "【已完成】\n设置已保存", nil
+	return "设置已保存", nil
 }
 func (e *Engine) changeShared(fn func(*GlobalConfig) error) (string, error) {
 	state, err := e.Store.Global()
@@ -174,7 +171,7 @@ func (e *Engine) changeShared(fn func(*GlobalConfig) error) (string, error) {
 	patch := map[string]json.RawMessage{}
 	_ = json.Unmarshal(raw, &patch)
 	_, err = e.Store.PatchGlobal(state.Revision, patch)
-	return "【已完成】\n设置已保存，所有 QQ 共用", err
+	return "设置已保存，所有 QQ 共用", err
 }
 
 func replyList(title string, items []string) string {
@@ -242,7 +239,7 @@ func parseAnswerRule(value, match string, groupMessage bool) (AnswerRule, error)
 		}
 	}
 	if !ok {
-		return AnswerRule{}, errors.New("请按“添加精准问 群聊 你好答你好呀”填写；好友私聊中发送会默认添加到好友问答，也可写“合并”共用")
+		return AnswerRule{}, errors.New("格式：添加精准问你好答你好呀。群聊和私聊按发送位置保存；加“合并”可共用")
 	}
 	return AnswerRule{Question: question, Answer: answer, Match: match, Scope: scope}, nil
 }
@@ -321,7 +318,7 @@ func (e *Engine) execute(m Event, c Config, cmd Command, arg string) (string, er
 			return "", err
 		}
 		if global.Config.MenuAutomatic {
-			return "默认共用总菜单已自动生成。发送“菜单”或“总菜单”查看分类，再发送分类菜单名称查看指令。", nil
+			return "默认总菜单已启用，发送“菜单”查看分类。", nil
 		}
 		if strings.TrimSpace(global.Config.MenuContent) != "" {
 			return "共用菜单已有自定义正文，未覆盖。可在菜单页查看或恢复默认。", nil
@@ -331,7 +328,7 @@ func (e *Engine) execute(m Event, c Config, cmd Command, arg string) (string, er
 		if err != nil {
 			return "", err
 		}
-		return "默认总菜单已初始化，所有 QQ 共用。发送“菜单”或“总菜单”查看分类，再发送分类菜单名称查看指令。", nil
+		return "已初始化所有 QQ 共用的默认菜单，发送“菜单”查看。", nil
 	case "菜单配置":
 		var lines []string
 		for _, f := range Features {
@@ -341,7 +338,7 @@ func (e *Engine) execute(m Event, c Config, cmd Command, arg string) (string, er
 			}
 			lines = append(lines, f.Title+"："+status)
 		}
-		return replyList("自定义菜单", lines), nil
+		return replyList("功能开关状态", lines), nil
 	case "搜索命令":
 		return searchCommands(c, arg), nil
 	case "自动任务状态":
@@ -513,7 +510,7 @@ func (e *Engine) execute(m Event, c Config, cmd Command, arg string) (string, er
 		if !removed {
 			return "没有找到这条问答规则。", nil
 		}
-		return "【已完成】\n问答规则已删除。", nil
+		return "问答规则已删除", nil
 	case "反馈":
 		owner := c.Owner
 		if owner == 0 {
@@ -628,7 +625,7 @@ func (e *Engine) execute(m Event, c Config, cmd Command, arg string) (string, er
 			if len(ids) == 0 {
 				return "【" + title + "】\n名单为空，所有已选对象都会收到群发。", nil
 			}
-			return replyList(title+"（这些对象不会收到群发）", ids), nil
+			return replyList(title, ids), nil
 		}
 		id, err := positive(value)
 		if (kind != "添加" && kind != "删除") || err != nil {
@@ -680,7 +677,7 @@ func (e *Engine) execute(m Event, c Config, cmd Command, arg string) (string, er
 			})
 		}
 		if cmd.Word == "群发" {
-			return "请说清楚发到哪里：“群发群 今晚8点集合”发到群，“群发好友 晚安”私聊好友。旧的“群发”不会再猜发送对象。", nil
+			return "群发群 内容\n群发好友 内容", nil
 		}
 		if cmd.Word == "群发群列表" || cmd.Word == "群发好友列表" {
 			arg = "列表"
@@ -692,19 +689,19 @@ func (e *Engine) execute(m Event, c Config, cmd Command, arg string) (string, er
 			kind, rest := parts(arg)
 			if kind == "添加" {
 				if !commandIsEnabled(c, addWord) {
-					return "【操作未完成】\n这条指令已停用：" + addWord, nil
+					return "这条指令已停用：" + addWord, nil
 				}
 				return e.execute(m, c, Command{Word: addWord, Feature: "qunfa", Usage: addWord + " " + idLabel}, rest)
 			}
 			if kind == "删除" {
 				if !commandIsEnabled(c, deleteWord) {
-					return "【操作未完成】\n这条指令已停用：" + deleteWord, nil
+					return "这条指令已停用：" + deleteWord, nil
 				}
 				return e.execute(m, c, Command{Word: deleteWord, Feature: "qunfa", Usage: deleteWord + " " + idLabel}, rest)
 			}
 			if kind == "列表" {
 				if !commandIsEnabled(c, listWord) {
-					return "【操作未完成】\n这条指令已停用：" + listWord, nil
+					return "这条指令已停用：" + listWord, nil
 				}
 				cmd.Word = listWord
 				arg = "列表"
@@ -746,7 +743,11 @@ func (e *Engine) execute(m Event, c Config, cmd Command, arg string) (string, er
 	case "循环群发", "循环群发群", "循环群发好友", "定时群发", "定时群发群", "定时群发好友", "定时说说", "停止循环群发", "取消定时群发", "取消定时说说":
 		kind := cmd.Feature
 		if cmd.Word == "循环群发" || cmd.Word == "定时群发" {
-			return "请明确发送对象：“" + cmd.Word + "群”发到已选择的群，“" + cmd.Word + "好友”私聊已选择的好友。", nil
+			unit := "间隔"
+			if cmd.Word == "定时群发" {
+				unit = "时间"
+			}
+			return fmt.Sprintf("%s群 %s 内容\n%s好友 %s 内容", cmd.Word, unit, cmd.Word, unit), nil
 		}
 		if cmd.Word == "停止循环群发" || cmd.Word == "取消定时群发" || cmd.Word == "取消定时说说" || arg == "停止" || arg == "取消" {
 			stopped := 0
@@ -774,9 +775,9 @@ func (e *Engine) execute(m Event, c Config, cmd Command, arg string) (string, er
 				return "", err
 			}
 			if stopped == 0 {
-				return "【没有进行中的任务】\n当前没有启用的" + map[string]string{"loop": "循环群发", "timed": "定时群发", "timedss": "定时说说"}[kind] + "任务。", nil
+				return "没有启用的" + map[string]string{"loop": "循环群发", "timed": "定时群发", "timedss": "定时说说"}[kind] + "任务。", nil
 			}
-			return fmt.Sprintf("【任务已暂停】\n已暂停 %d 个%s任务。需要恢复时可在网页“自动任务”重新开启。", stopped, map[string]string{"loop": "循环群发", "timed": "定时群发", "timedss": "定时说说"}[kind]), nil
+			return fmt.Sprintf("已暂停 %d 个%s任务。需要恢复时在网页“自动任务”重新开启。", stopped, map[string]string{"loop": "循环群发", "timed": "定时群发", "timedss": "定时说说"}[kind]), nil
 		}
 		value, body := parts(arg)
 		if body == "" {
@@ -803,7 +804,7 @@ func (e *Engine) execute(m Event, c Config, cmd Command, arg string) (string, er
 			j.Next = nextDaily(clock, time.Now()).Unix()
 		}
 		if err := validateJobRecipients(c, j); err != nil {
-			return "【任务未保存】\n" + err.Error(), nil
+			return err.Error(), nil
 		}
 		replaced := false
 		_, err := e.Store.Update(m.Account().Key(), -1, func(v *Config) error {
@@ -1146,7 +1147,7 @@ func (e *Engine) execute(m Event, c Config, cmd Command, arg string) (string, er
 			return result, nil
 		}
 		if string(raw) == "null" || len(raw) == 0 {
-			return "【已完成】\n接口已确认完成。", nil
+			return "接口已确认完成。", nil
 		}
 		var pretty bytes.Buffer
 		if json.Indent(&pretty, raw, "", "  ") == nil {
@@ -1292,7 +1293,7 @@ func commandCategoryHelp(c Config, m Event, input string) (string, bool) {
 			}
 		}
 		if len(lines) == 0 {
-			return "【" + group.Trigger + "】\n这类功能当前没有可用指令。", true
+			return group.Trigger + "当前没有可用指令。", true
 		}
 		return group.Trigger + "\n----\n" + strings.Join(lines, "\n"), true
 	}
@@ -1440,9 +1441,9 @@ func searchCommands(c Config, query string) string {
 		}
 	}
 	if len(lines) == 0 {
-		return "没有找到匹配的指令。试试搜索功能名称或用途关键词。"
+		return "没有找到匹配的指令。"
 	}
-	return "【指令搜索结果】\n" + strings.Join(lines, "\n")
+	return strings.Join(lines, "\n")
 }
 
 func parseScheduleClock(value string) (string, bool) {
